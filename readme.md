@@ -71,3 +71,5 @@ pip install -r requirements.txt
 
 # Run the blockchain node
 python server.py
+
+#Use postman or curl to interact with the blockchain!
