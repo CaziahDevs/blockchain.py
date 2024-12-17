@@ -1,9 +1,9 @@
 from flask.json import jsonify
-from requests import request
+from flask import request, Flask
 
 from block import Block
 from blockchain import Blockchain
-from flask import Flask
+
 from uuid import uuid4
 
 #Create node
@@ -20,7 +20,8 @@ def mine():
 
     blockchain.new_transaction("0",node_identifier, 1)
 
-    new_block: Block = blockchain.new_block(proof, last_block.prev_hash)
+
+    new_block: Block = blockchain.new_block(proof,blockchain.hash(last_block))
 
     response = {
         'message': 'New block forged',
@@ -31,25 +32,27 @@ def mine():
 
     return jsonify(response), 200
 
+
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
-    values = request.get_json()
+    data = request.get_json(force=True)
 
     required_fields = ['sender', 'recipient', 'amount']
     
-    if not all(field in values for field in required_fields):
-        return 'Missing values', 400
+    if not data or not all(field in data for field in required_fields):
+        return 'Missing data', 400
 
-    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
+    index = blockchain.new_transaction(data['sender'], data['recipient'], data['amount'])
     response = {'message': f'New transaction added to block {index}'}
 
     return jsonify(response), 201
-    
 
 @app.route('/chain', methods=['GET'])
 def get_chain():
+    chain = blockchain.get_chain
+    print(chain)
     response = {
-        'chain': blockchain.chain,
+        'chain': chain,
         'length': len(blockchain.chain)
     }
     return jsonify(response), 200

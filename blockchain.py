@@ -2,12 +2,12 @@ import time
 from typing import List
 from block import Block
 from transaction import Transaction
-from pickle import dumps
+from pickle import dumps, loads
 from hashlib import sha256
 
 class Blockchain(object):
     def __init__(self):
-        self.chain = []
+        self.chain: List[Block] = []
         self.current_transactions = []
 
         # Create the genesis block
@@ -25,7 +25,7 @@ class Blockchain(object):
         Block: The newly created block.
         """
         index, timestamp = len(self.chain) + 1, time.time()
-        ph_arg = prev_hash or (self.hash(self.chain[-1]) if self.chain else None)
+        ph_arg = prev_hash or self.hash(self.chain[-1])
         block = Block(index, timestamp,proof, ph_arg)
 
         # Reset the current_transactions list
@@ -47,6 +47,11 @@ class Blockchain(object):
     def last_block(self):
         return self.chain[-1]
     
+    @property
+    def get_chain(self)-> List[dict]:
+        copy_chain = [block.to_dict() for block in self.chain.copy()]
+        return copy_chain
+
     @staticmethod
     def hash(block:Block) -> str:
         """
@@ -54,7 +59,7 @@ class Blockchain(object):
         :param block: Block
         :return: <str>
         """
-        block_str = dumps(block).encode()
+        block_str = str(loads(dumps(block))).encode()
         return sha256(block_str).hexdigest()
     
     def proof_of_work(self, last_proof: int) -> int:
