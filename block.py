@@ -1,6 +1,6 @@
 import time
 from typing import List
-from .transaction import Transaction
+from transaction import Transaction
 
 class Block(object):
     def __init__(self, index:int, timestamp:float, proof:int, prev_hash:int):

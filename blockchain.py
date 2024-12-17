@@ -1,7 +1,7 @@
 import time
 from typing import List
-from .block import Block
-from .transaction import Transaction
+from block import Block
+from transaction import Transaction
 from pickle import dumps
 from hashlib import sha256
 
@@ -13,7 +13,7 @@ class Blockchain(object):
         # Create the genesis block
         self.new_block(1, 100)
 
-    def new_block(self: int, proof: int, prev_hash=None) -> Block:
+    def new_block(self, proof: int, prev_hash=None) -> Block:
         """
         Creates a new block in the blockchain.
 
@@ -25,7 +25,7 @@ class Blockchain(object):
         Block: The newly created block.
         """
         index, timestamp = len(self.chain) + 1, time.time()
-        ph_arg = prev_hash or self.hash(self.chain[-1])
+        ph_arg = prev_hash or (self.hash(self.chain[-1]) if self.chain else None)
         block = Block(index, timestamp,proof, ph_arg)
 
         # Reset the current_transactions list
@@ -35,18 +35,17 @@ class Blockchain(object):
 
         return block
     
-    def new_transaction(self, sender:str, receipient:str, amount:int) -> int:
+    def new_transaction(self, sender:str, recipient:str, amount:int) -> int:
         """
         Adds a transaction to the current_transactions list
         Returns the index of the block that will hold the transaction
         """
-        self.current_transactions.append(Transaction(sender, receipient, amount))
-        return self.last_block.index + 1
+        self.current_transactions.append(Transaction(sender, recipient, amount))
+        return len(self.chain) + 1
         
     @property
     def last_block(self):
-        # Returns the last block in the chain
-        return self.chain[-1]  
+        return self.chain[-1]
     
     @staticmethod
     def hash(block:Block) -> str:
