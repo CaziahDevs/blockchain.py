@@ -57,5 +57,39 @@ def get_chain():
     }
     return jsonify(response), 200
 
+@app.route('/nodes/register', methods=['POST'])
+def register_nodes():
+    data = request.get_json(force=True)
+    nodes = data.get('nodes')
+
+    if not nodes:
+        return 'Error: No nodes in list', 400
+    
+    for node in nodes:
+        blockchain.register_node(node)
+
+    response = {
+       'message': 'New nodes have been added',
+        'total_nodes': list(blockchain.nodes)
+    }
+
+    return jsonify(response), 201
+@app.route('/nodes/resolve/', methods=['POST'])
+def consensus():
+    replaced_chain = blockchain.resolve_conflicts()
+
+    if replaced_chain:
+        response = {
+            'message': 'Conflict detected and replaced',
+            'new_chain': blockchain.get_chain
+        }
+    else:
+        response = {
+            'message': 'No conflict detected',
+            'chain': blockchain.get_chain
+        }
+    
+    return jsonify(response), 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3333)

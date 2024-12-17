@@ -1,5 +1,8 @@
 import time
-from typing import List
+from typing import List, Set
+from urllib.parse import urlparse
+
+import requests
 from block import Block
 from transaction import Transaction
 from pickle import dumps, loads
@@ -9,6 +12,8 @@ class Blockchain(object):
     def __init__(self):
         self.chain: List[Block] = []
         self.current_transactions = []
+        #Nodes in the blockchain network
+        self.nodes:Set[str] = set()
 
         # Create the genesis block
         self.new_block(1, 100)
@@ -88,8 +93,56 @@ class Blockchain(object):
         guess_hash = sha256(guess).hexdigest()
         return guess_hash[:4] == '0000'
     
-
+    def register_node(self, address:str):
+        """
+        Registers a new node to the list of nodes
+        :param address: <str> Address of the node
+        :return: None
+        """
+        parsed_url = urlparse(address)
+        self.nodes.add(parsed_url.netloc)
     
-    
+    def valid_chain(self, chain: List[Block]) -> bool:
+        """
+        Validates the blockchain by checking if it's valid and follows the rules of the Proof of Work algorithm
+        :param chain: <List[Block]> The blockchain to validate
+        :return: <bool> True if valid, False if not.
+        """
+        answer = False
+        for idx in range(1, len(chain)):
+            current_block = chain[idx]
+            last_block = chain[idx -1]
+            print(f'last block: {last_block}')
+            print(f'current block: {current_block}')
+            print("\n-----------\n")
+            #Check if the hash of the previous block is valid
+            if current_block.prev_hash != self.hash(last_block):
+                return answer
+            #Check if the proof of work is valid
+            if not self.valid_proof(last_block.proof, current_block.proof):
+                return answer
 
-        
+        return not answer
+    
+    def resolve_conflicts(self) -> bool:
+        answer = False
+        neighbours = self.nodes
+        new_chain = None
+        max_length = len(self.chain)
+
+        for node in self.nodes:
+            response = requests.get(f'http://{node}/chain')
+            if response.status_code == 200:
+                node_length = response.json()['length']
+                node_chain = response.json()['chain']
+
+                #Check if the new chain is longer and valid
+                if node_length > max_length and self.valid_chain(node_chain):
+                    max_length = node_length
+                    new_chain = node_chain
+                
+            if new_chain:
+                self.chain = new_chain
+                answer = True
+
+        return answer
